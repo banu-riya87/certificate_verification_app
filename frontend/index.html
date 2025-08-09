@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Certificate Verification DApp</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2rem; }
+    .container { max-width: 600px; margin: auto; }
+    input, textarea, button { margin: 0.5rem 0; width: 100%; padding: 0.5rem; }
+    .section { margin-bottom: 2rem; border: 1px solid #ccc; padding: 1rem; border-radius: 8px; }
+    h2 { margin-top: 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Certificate Verification DApp</h1>
+    <button id="connectBtn" onclick="connectWallet()">Connect MetaMask</button>
+    <div id="walletAddress" style="margin-bottom:1rem;"></div>
+    <div class="section">
+      <h2>Issue Certificate (Admin)</h2>
+      <input id="recipient" placeholder="Recipient Address (or use your wallet)" />
+      <textarea id="metadata" placeholder='Certificate Metadata (JSON)'></textarea>
+      <button onclick="issueCertificate()">Issue Certificate</button>
+      <div id="issueResult"></div>
+    </div>
+    <div class="section">
+      <h2>Verify Certificate</h2>
+      <input id="certId" placeholder="Certificate ID" />
+      <input id="verifyRecipient" placeholder="Recipient Address" />
+      <input id="ipfsHash" placeholder="IPFS Hash" />
+      <button onclick="verifyCertificate()">Verify Certificate</button>
+      <div id="verifyResult"></div>
+    </div>
+    <div class="section">
+      <h2>List Certificates by Owner</h2>
+      <input id="listOwner" placeholder="Owner Address" />
+      <button onclick="listCertificates()">List Certificates</button>
+      <div id="listResult"></div>
+    </div>
+  </div>
+  <script>
+    let currentAccount = null;
+    async function connectWallet() {
+      if (window.ethereum) {
+        try {
+          const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+          currentAccount = accounts[0];
+          document.getElementById('walletAddress').innerText = 'Connected: ' + currentAccount;
+          document.getElementById('recipient').value = currentAccount;
+        } catch (err) {
+          document.getElementById('walletAddress').innerText = 'Connection failed.';
+        }
+      } else {
+        document.getElementById('walletAddress').innerText = 'MetaMask not detected.';
+      }
+    }
+    async function issueCertificate() {
+      let recipient = document.getElementById('recipient').value;
+      if (!recipient && currentAccount) recipient = currentAccount;
+      let metadata;
+      try {
+        metadata = JSON.parse(document.getElementById('metadata').value);
+      } catch (e) {
+        document.getElementById('issueResult').innerText = 'Invalid JSON metadata.';
+        return;
+      }
+      const res = await fetch('http://localhost:3001/issue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ recipient, metadata })
+      });
+      const data = await res.json();
+      document.getElementById('issueResult').innerText = data.success ? `Certificate issued! IPFS Hash: ${data.ipfsHash}` : `Error: ${data.error}`;
+    }
+    async function verifyCertificate() {
+      const certId = document.getElementById('certId').value;
+      const recipient = document.getElementById('verifyRecipient').value;
+      const ipfsHash = document.getElementById('ipfsHash').value;
+      const res = await fetch('http://localhost:3001/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ certId, recipient, ipfsHash })
+      });
+      const data = await res.json();
+      document.getElementById('verifyResult').innerText = data.valid ? 'Certificate is valid!' : `Invalid or not found. ${data.error || ''}`;
+    }
+
+    async function listCertificates() {
+      const owner = document.getElementById('listOwner').value;
+      if (!owner) {
+        document.getElementById('listResult').innerText = 'Please enter an owner address.';
+        return;
+      }
+      const res = await fetch(`http://localhost:3001/certificates/${owner}`);
+      const data = await res.json();
+      if (data.certIds && data.certIds.length > 0) {
+        document.getElementById('listResult').innerText = 'Certificate IDs: ' + data.certIds.join(', ');
+      } else if (data.certIds && data.certIds.length === 0) {
+        document.getElementById('listResult').innerText = 'No certificates found for this address.';
+      } else {
+        document.getElementById('listResult').innerText = 'Error: ' + (data.error || 'Unknown error');
+      }
+    }
+  </script>
+</body>
+</html>
