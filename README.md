@@ -75,7 +75,7 @@ This project is a full-stack blockchain-based certificate verification system us
 ## Scripts
 - `start_node.sh` — Start Hardhat node
 - `deploy_contract.sh` — Compile and deploy contract
-- `start_ipfs.sh` — Start IPFS node
+- `start_ipfs.sh` — Start IPFS node (Install IPFS from https://docs.ipfs.tech/install/ prior executing start_ipfs.ss to run it in local)
 - `start_app.sh` — Start backend and frontend
 
 ## Notes
