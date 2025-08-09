@@ -34,8 +34,7 @@ This project is a full-stack blockchain-based certificate verification system us
 2. **Install Dependencies**
    - Open a terminal in the new project root.
    - Run the following in each subfolder:
-     - `cd contracts && npm install`
-     - `cd backend && npm install`
+     - `npm install`
      - (Frontend is static, no install needed unless you add a build system)
 
 3. **Start the Stack**
